@@ -60,7 +60,7 @@ public class FlappyBird extends ApplicationAdapter {
 		posicaoMovimentoCanoHorizontal = larguraTela + larguraCano;
 
 		nRandom = new Random();
-		
+
 		fonte   = new BitmapFont();
 		fonte.setColor( Color.WHITE );
 		fonte.getData().setScale( 12 );
@@ -109,7 +109,7 @@ public class FlappyBird extends ApplicationAdapter {
 			if (posicaoMovimentoCanoHorizontal <= -larguraCano) {
 				posicaoMovimentoCanoHorizontal = larguraTela + larguraCano;
 				alturaRandomica = nRandom.nextInt(alturaCano) - espacoEntreCanos;
-				marcouPonto = false; 
+				marcouPonto = false;
 			}
 
 
@@ -123,7 +123,7 @@ public class FlappyBird extends ApplicationAdapter {
 
 		}else if( estadoJogo == 0 && Gdx.input.justTouched() ){
 			estadoJogo = 1;
-			velocidadeQueda = -23; 
+			velocidadeQueda = -23;
 		}
 
 		fonte.draw( spriteBatch, String.valueOf( pontuacao ), larguraTela / 2, alturaTela - alturaTela / 12 );
