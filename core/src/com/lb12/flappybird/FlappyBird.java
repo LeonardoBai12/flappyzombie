@@ -7,6 +7,12 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Circle;
+import com.badlogic.gdx.math.Intersector;
+import com.badlogic.gdx.math.Rectangle;
+
+import org.omg.PortableInterceptor.Interceptor;
 
 import java.util.Random;
 
@@ -19,6 +25,7 @@ public class FlappyBird extends ApplicationAdapter {
 	private Texture fundo;
 	private Texture canoBaixo;
 	private Texture canoTopo;
+	private Texture gameOver;
 	private Random nRandom;
 	private BitmapFont fonte;
 
@@ -39,7 +46,14 @@ public class FlappyBird extends ApplicationAdapter {
 
 	private int estadoJogo = 0;
 	private int pontuacao = 0;
+	private int alturaGameOver;
+	private int larguraGameOver;
 	private boolean marcouPonto;
+	private Circle zumbiCirculo;
+	private Rectangle retanguloCanoTopo;
+	private Rectangle retanguloCanoBaixo;
+	//private ShapeRenderer shapeRenderer;
+
 
 	@Override
 	public void create () {
@@ -52,9 +66,13 @@ public class FlappyBird extends ApplicationAdapter {
 
 		alturaCano   = alturaTela / 2;
 		larguraCano  = larguraTela / 6;
+
 		alturaZumbi  = alturaTela / 20;
-		larguraZumbi = larguraTela / 7;
+		larguraZumbi = larguraTela / 9;
 		posicaoZumbi = larguraTela / 5;
+
+		alturaGameOver  = alturaTela / 8;
+		larguraGameOver = larguraTela  / 2;
 
 		posicaoInicialVertical = alturaTela / 2;
 		posicaoMovimentoCanoHorizontal = larguraTela + larguraCano;
@@ -65,7 +83,10 @@ public class FlappyBird extends ApplicationAdapter {
 		fonte.setColor( Color.WHITE );
 		fonte.getData().setScale( 12 );
 
-		spriteBatch = new SpriteBatch();
+		spriteBatch   = new SpriteBatch();
+		//shapeRenderer = new ShapeRenderer();
+
+		zumbiCirculo       = new Circle();
 
 		canoTopo  = new Texture("cano_topo.png");
 		canoBaixo = new Texture("cano_baixo.png");
@@ -75,7 +96,8 @@ public class FlappyBird extends ApplicationAdapter {
 		zumbi[ 1 ] = new Texture( "zumbi2.png" );
 		zumbi[ 2 ] = new Texture( "zumbi3.png" );
 
-		fundo = new Texture( "fundo.png" );
+		fundo    = new Texture( "fundo.png"     );
+		gameOver = new Texture( "game_over.png" );
 
 	}
 
@@ -88,40 +110,56 @@ public class FlappyBird extends ApplicationAdapter {
 		spriteBatch.begin();
 		spriteBatch.draw(fundo, 0, 0, larguraTela, alturaTela);
 		spriteBatch.draw(zumbi[(int) variacao], posicaoZumbi , posicaoInicialVertical, larguraZumbi, alturaZumbi);
+		spriteBatch.draw(canoTopo, posicaoMovimentoCanoHorizontal, alturaCano + (espacoEntreCanos / 2) + alturaRandomica, larguraCano, alturaCano);
+		spriteBatch.draw(canoBaixo, posicaoMovimentoCanoHorizontal, -(espacoEntreCanos / 2) + alturaRandomica, larguraCano, alturaCano);
 
 		variacao += deltaTime * 5;
 
 		if ( variacao > 2 )
 			variacao = 0;
 
-		if ( estadoJogo == 1 ) {
+		if ( estadoJogo != 0 ) { //Jogo sendo executado
 
-			posicaoMovimentoCanoHorizontal -= deltaTime * 800;
 			velocidadeQueda++;
-
-			if (Gdx.input.justTouched()) {
-				velocidadeQueda = -23;
-			}
 
 			if (posicaoInicialVertical > 0 || velocidadeQueda < 0)
 				posicaoInicialVertical -= velocidadeQueda;
 
-			if (posicaoMovimentoCanoHorizontal <= -larguraCano) {
-				posicaoMovimentoCanoHorizontal = larguraTela + larguraCano;
-				alturaRandomica = nRandom.nextInt(alturaCano) - espacoEntreCanos;
-				marcouPonto = false;
+			if( estadoJogo == 1 ) {
+				posicaoMovimentoCanoHorizontal -= deltaTime * 800;
+
+				if (posicaoMovimentoCanoHorizontal <= -larguraCano) {
+					posicaoMovimentoCanoHorizontal = larguraTela + larguraCano;
+					alturaRandomica = nRandom.nextInt(alturaCano) - espacoEntreCanos;
+					marcouPonto = false;
+				}
+
+				if (posicaoMovimentoCanoHorizontal < posicaoZumbi && !marcouPonto) {
+					marcouPonto = true;
+					pontuacao++;
+				}
+
+				if (Gdx.input.justTouched()) {
+					velocidadeQueda = -23;
+				}
+
+			}else{ //Game Over
+
+				spriteBatch.draw(gameOver, larguraTela / 2 - larguraGameOver / 2, alturaTela / 2, larguraGameOver , alturaGameOver );
+
+				if( Gdx.input.justTouched() ){
+
+					estadoJogo      = 0;
+					pontuacao       = 0;
+					velocidadeQueda = 0;
+					posicaoInicialVertical = alturaTela / 2;
+					posicaoMovimentoCanoHorizontal = larguraTela + larguraCano;
+
+				}
+
 			}
 
-
-			if( posicaoMovimentoCanoHorizontal < posicaoZumbi && !marcouPonto ) {
-				marcouPonto = true;
-				pontuacao++;
-			}
-
-			spriteBatch.draw(canoTopo, posicaoMovimentoCanoHorizontal, alturaCano + (espacoEntreCanos / 2) + alturaRandomica, larguraCano, alturaCano);
-			spriteBatch.draw(canoBaixo, posicaoMovimentoCanoHorizontal, -(espacoEntreCanos / 2) + alturaRandomica, larguraCano, alturaCano);
-
-		}else if( estadoJogo == 0 && Gdx.input.justTouched() ){
+		}else if( Gdx.input.justTouched() ){ // Tela Inicial
 			estadoJogo = 1;
 			velocidadeQueda = -23;
 		}
@@ -129,6 +167,33 @@ public class FlappyBird extends ApplicationAdapter {
 		fonte.draw( spriteBatch, String.valueOf( pontuacao ), larguraTela / 2, alturaTela - alturaTela / 12 );
 
 		spriteBatch.end();
+
+		zumbiCirculo.set( posicaoZumbi + larguraZumbi / 2, posicaoInicialVertical + alturaZumbi / 2, alturaZumbi / 2 );
+		retanguloCanoTopo = new Rectangle( posicaoMovimentoCanoHorizontal,
+									  -(espacoEntreCanos / 2) + alturaRandomica,
+											larguraCano,
+											alturaCano );
+
+		retanguloCanoBaixo = new Rectangle( posicaoMovimentoCanoHorizontal,
+				alturaCano + (espacoEntreCanos / 2) + alturaRandomica,
+				larguraCano,
+				alturaCano );
+
+		//Desenho de formas - usado para testes de colisão
+		/* shapeRenderer.begin( ShapeRenderer.ShapeType.Filled );
+		shapeRenderer.circle( posicaoZumbi + larguraZumbi / 2, posicaoInicialVertical + larguraZumbi / 2, zumbiCirculo.radius );
+		shapeRenderer.rect( retanguloCanoTopo.x, retanguloCanoTopo.y, retanguloCanoTopo.width, retanguloCanoTopo.height );
+		shapeRenderer.rect( retanguloCanoBaixo.x, retanguloCanoBaixo.y, retanguloCanoBaixo.width, retanguloCanoBaixo.height );
+		shapeRenderer.setColor(Color.BLUE);
+
+		shapeRenderer.end(); */
+
+		//Teste de colisão
+		if( Intersector.overlaps( zumbiCirculo, retanguloCanoBaixo ) ||
+			Intersector.overlaps( zumbiCirculo, retanguloCanoTopo  ) ||
+			posicaoZumbi < 0 || posicaoZumbi > alturaTela            ){
+			estadoJogo = 2;
+		}
 
 	}
 
