@@ -165,7 +165,7 @@ public class FlappyZombie extends ApplicationAdapter {
 					pontuacao++;
 				}
 
-				if (Gdx.input.justTouched()) {
+				if ( posicaoInicialVertical < alturaTela - zumbi[0].getHeight() && Gdx.input.justTouched() ){
 					velocidadeQueda = -14;
 				}
 
